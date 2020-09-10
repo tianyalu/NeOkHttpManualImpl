@@ -14,6 +14,8 @@ import com.sty.ne.okhttp.manualimpl.okhttp.OkHttpClient;
 import com.sty.ne.okhttp.manualimpl.okhttp.Request;
 import com.sty.ne.okhttp.manualimpl.okhttp.RequestBody;
 import com.sty.ne.okhttp.manualimpl.okhttp.Response;
+import com.sty.ne.okhttp.manualimpl.okhttp.connpool.ConnectionPool;
+import com.sty.ne.okhttp.manualimpl.okhttp.connpool.UserConnectionPool;
 
 import java.io.IOException;
 
@@ -23,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String POST_PATH = "http://restapi.amap.com/v3/weather/weatherInfo";
     private Button btnRequestGet;
     private Button btnRequestPost;
+    private Button btnConnectionPool;
     private TextView tvContent;
 
 
@@ -38,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private void initView() {
         btnRequestGet = findViewById(R.id.btn_request_get);
         btnRequestPost = findViewById(R.id.btn_request_post);
+        btnConnectionPool = findViewById(R.id.btn_connection_pool);
         tvContent = findViewById(R.id.tv_content);
     }
 
@@ -52,6 +56,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 onBtnRequestPostClicked();
+            }
+        });
+        btnConnectionPool.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBtnConnectionPoolClicked();
             }
         });
     }
@@ -117,5 +127,35 @@ public class MainActivity extends AppCompatActivity {
                 tvContent.setText(text);
             }
         });
+    }
+
+
+    private void onBtnConnectionPoolClicked() {
+        //拿到连接池
+        final ConnectionPool connectionPool = new ConnectionPool();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                UserConnectionPool userConnectionPool = new UserConnectionPool();
+                for (int i = 0; i < 5; i++) {
+                    userConnectionPool.usePool(connectionPool, "restapi.amap.com", 80);
+                }
+            }
+        }).start();
+        // D/UserConnectionPool: usePool: 连接池中没有连接对象，需要实例化一个连接对象...
+        // D/ConnectionPool: putConnection size: 1
+        // D/UserConnectionPool: usePool: 给服务器请求...
+        // D/UserConnectionPool: usePool: 复用一个连接对象
+        // D/ConnectionPool: putConnection size: 1
+        // D/UserConnectionPool: usePool: 给服务器请求...
+        // D/UserConnectionPool: usePool: 复用一个连接对象
+        // D/ConnectionPool: putConnection size: 1
+        // D/UserConnectionPool: usePool: 给服务器请求...
+        // D/UserConnectionPool: usePool: 复用一个连接对象
+        // D/ConnectionPool: putConnection size: 1
+        // D/UserConnectionPool: usePool: 给服务器请求...
+        // D/UserConnectionPool: usePool: 复用一个连接对象
+        // D/ConnectionPool: putConnection size: 1
+        // D/UserConnectionPool: usePool: 给服务器请求...
     }
 }
