@@ -5,6 +5,11 @@ import java.net.URL;
 import java.util.Map;
 
 /**
+ * 解析Request，获取如下内容：
+ * 请求头的请求行
+ * 请求的域名
+ * 请求的端口
+ * URL后面的资源 file
  * @Author: tian
  * @UpdateDate: 2020/9/8 9:52 PM
  */
@@ -95,5 +100,15 @@ public class SocketRequestServer {
         }
 
         return stringBuffer.toString();
+    }
+
+    public String queryHttpOrHttps(String urlStr) {
+        try {
+            URL url = new URL(urlStr);
+            return url.getProtocol();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

@@ -14,6 +14,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
+import javax.net.ssl.SSLSocketFactory;
+
 /**
  * 连接服务器拦截器
  * @Author: tian
@@ -26,7 +28,18 @@ public class ConnectServerInterceptor implements Interceptor {
     public Response doNext(Chain chain) throws IOException {
         SocketRequestServer srs = new SocketRequestServer();
         Request request = chain.getRequest();
-        Socket socket = new Socket(srs.getHost(request), srs.getPort(request));
+        Socket socket = null;
+
+        String result = srs.queryHttpOrHttps(request.getUrl());
+        if(request != null) {
+            if("HTTP".equalsIgnoreCase(result)) {
+                //只能访问Http，不能访问HTTPs
+                socket = new Socket(srs.getHost(request), srs.getPort(request));
+            }else if("HTTPS".equalsIgnoreCase(result)) {
+                //HTTPS
+                socket = SSLSocketFactory.getDefault().createSocket(srs.getHost(request), srs.getPort(request));
+            }
+        }
 
         //todo 请求
         OutputStream os = socket.getOutputStream();

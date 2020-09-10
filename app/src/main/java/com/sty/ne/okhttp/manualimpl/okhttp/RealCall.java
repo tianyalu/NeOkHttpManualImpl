@@ -80,11 +80,16 @@ public class RealCall implements Call {
         }
     }
 
+    /**
+     * 责任链模式设计的拦截器
+     * @return
+     * @throws IOException
+     */
     private Response getResponseWithInterceptorChain() throws IOException{
         List<Interceptor> interceptorList = new ArrayList<>();
         interceptorList.add(new ReRequestInterceptor()); //重试拦截器
         interceptorList.add(new RequestHeaderInterceptor()); //请求头拦截器
-        interceptorList.add(new ConnectServerInterceptor()); //连接服务器的拦截器
+        interceptorList.add(new ConnectServerInterceptor()); //连接服务器的拦截器 Response
 
         ChainManager chainManager = new ChainManager(interceptorList, 0, request, this);
         return chainManager.getResponse(request); //最终返回的Response
