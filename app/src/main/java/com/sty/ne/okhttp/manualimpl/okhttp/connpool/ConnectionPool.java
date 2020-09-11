@@ -62,6 +62,12 @@ public class ConnectionPool {
         }
     };
 
+    /**
+     * 清理闲置连接的思想：循环检查当前队列中所有连接的最大闲置时间，超出设置允许的最大时间keepAlive的直接回收；
+     * 小于该时间的，等待delta时间后（即达到keepAlive时间后），再次执行清理操作，直到队列中没有连接为止。
+     * @param currentTimeMillis
+     * @return
+     */
     private long clean(long currentTimeMillis) {
         //定义最终最大的闲置时间 result
         long idleRecordSave = -1;
@@ -80,8 +86,8 @@ public class ConnectionPool {
                     continue; //继续检查后续是否有连接对象需要清理
                 }
 
-                //时间的处理
-                if(idleRecordSave < idleTime) { //证明计算出来的闲置时间idleTime是合格的
+                //得到最长闲置时间
+                if(idleRecordSave < idleTime) { //证明计算出来的闲置时间idleTime是合格的（走到这里的idleTime都是<=keepAlive的）
                     idleRecordSave = idleTime;
                 }
             } //while end
@@ -95,14 +101,25 @@ public class ConnectionPool {
         return idleRecordSave;
     }
 
-    //线程池，为清理机制工作
+
+    /**
+     * 线程池，为清理机制工作
+     * 参数1：0            核心线程数 0
+     * 参数2：MAX_VALUE    线程池中最大值
+     * 参数3：60           单位值
+     * 参数4：秒钟          时 分 秒
+     * 参数5：队列          SynchronousQueue
+     *
+     * 执行任务大于（核心线程数） 启用（60s闲置时间）
+     * 60秒闲置时间，没有过，复用之前的线程， 60秒过的，新实例化
+     */
     private Executor threadExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
             60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(),
             new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
                     Thread thread = new Thread(r, "线程池标记...");
-                    thread.setDaemon(true); //设置守护线程
+                    thread.setDaemon(true); //设置为守护线程
                     return thread;
                 }
             });
@@ -113,6 +130,7 @@ public class ConnectionPool {
         if(!cleanRunnableFlag) {
             cleanRunnableFlag = true;
             //启动检查清理机制
+            threadExecutor.execute(runnable);
         }
         httpConnectionDeque.add(httpConnection);
         int size = httpConnectionDeque.size();
